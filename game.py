@@ -9,9 +9,11 @@ from random import randint
 #hard: more piglets
 #single mode???
 
-screen_size = (800, 600)
 
-#funkcje
+#---------------------------------------------------------------------
+#                           FUNCTIONS
+#---------------------------------------------------------------------
+
 def get_image(name, color = False):
     image = pygame.image.load(os.path.join('DATA', name))
     image = image.convert()
@@ -25,7 +27,10 @@ def get_sound(name):
     sound = pygame.mixer.Sound(fullname)
     return sound
 
-#klasy
+#---------------------------------------------------------------------
+#                            PIGLET
+#---------------------------------------------------------------------
+
 class Piglet(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
@@ -41,6 +46,10 @@ class Piglet(pygame.sprite.Sprite):
     def hit(self):
         self.x_velocity = -self.x_velocity
         self.y_velocity = randint(-8,8)
+
+#---------------------------------------------------------------------
+#                              BAR
+#---------------------------------------------------------------------
 
 class Bar(pygame.sprite.Sprite):
     def __init__(self):
@@ -61,13 +70,33 @@ class Bar(pygame.sprite.Sprite):
     
     def change_pos(self, width, height):
         self.rect.center = (width, height)
+    
+#---------------------------------------------------------------------
+#                           SCORE BOARD
+#---------------------------------------------------------------------
 
-#gra
+class ScoreBoard(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.points = 0
+        self.wins = 0
+        self.text = "Points: "+str(self.points)+"\n Wins: "+str(self.wins)
+        self.font = pygame.font.SysFont(None,50)
+        self.image = self.font.render(self.text,1,(255,255,255))
+        self.rect = self.image.get_rect()
+
+    def update(self):
+        self.text = "Points: "+str(self.points)+"\n Wins: "+str(self.wins)
+        self.image = self.font.render(self.text,1,(255,255,255))
+        self.rect = self.image.get_rect()
+
+#---------------------------------------------------------------------
+#                               GAME
+#---------------------------------------------------------------------
 
 def game():
-    
-    pygame.init()
 
+    screen.blit(background,(0,0))
     piglet_sprite = pygame.sprite.RenderClear() 
     piglet = Piglet()
     piglet_sprite.add(piglet)
@@ -78,10 +107,16 @@ def game():
     bar_left.rect.center = (1*screen_size[0]/25,screen_size[1])
     bar_sprite.add(bar_right)
     bar_sprite.add(bar_left)
+    score_sprite = pygame.sprite.RenderClear()
+    score_left = ScoreBoard()
+    score_right = ScoreBoard()
+    score_right.rect.center = (20*screen_size[0]/25,30)
+    score_sprite.add(score_left)
+    score_sprite.add(score_right)
+    score_sprite.draw(screen)
+    pygame.display.flip()
 
     clock = pygame.time.Clock()
-    score_left = 0
-    score_right = 0
     run = True
 
     while run:
@@ -114,12 +149,24 @@ def game():
         bar_sprite.update()
 
         if piglet.rect.x>=screen_size[0]-10: #right
-            score_left += 1
+            wolf.play()
+            score_left.wins += 1
+            score_right.points = 0
+            score_sprite.update()
+            score_right.rect.center = (20*screen_size[0]/25,30)
+            score_sprite.clear(screen, background)
+            score_sprite.draw(screen)
             piglet.rect.center = (screen_size[0]/2,screen_size[1]/2)
             piglet.x_velocity = 6
             piglet.y_velocity = randint(-8,8)
         if piglet.rect.x<=0: #left
-            score_right += 1
+            wolf.play()
+            score_right.wins += 1
+            score_left.points = 0
+            score_sprite.update()
+            score_right.rect.center = (20*screen_size[0]/25,30)
+            score_sprite.clear(screen, background)
+            score_sprite.draw(screen)
             piglet.rect.center = (screen_size[0]/2,screen_size[1]/2)
             piglet.x_velocity = -6
             piglet.y_velocity = randint(-8,8)
@@ -129,31 +176,55 @@ def game():
         if piglet.rect.y<=0: #up
             piglet.y_velocity = -piglet.y_velocity 
 
-        if pygame.sprite.collide_mask(piglet, bar_left) or pygame.sprite.collide_mask(piglet, bar_right):
+        if pygame.sprite.collide_mask(piglet, bar_left):
+            oink.play()
+            score_left.points += 1
+            score_sprite.update()
+            score_right.rect.center = (20*screen_size[0]/25,30)
+            score_sprite.clear(screen, background)
+            score_sprite.draw(screen)
             piglet.hit()
+        
+        if pygame.sprite.collide_mask(piglet, bar_right):
+            oink.play()
+            score_right.points += 1 
+            score_sprite.update()
+            score_right.rect.center = (20*screen_size[0]/25,30)
+            score_sprite.clear(screen, background)
+            score_sprite.draw(screen)
+            piglet.hit()
+            
         
         piglet_sprite.clear(screen, background)
         bar_sprite.clear(screen, background)
+        score_sprite.clear(screen, background)
         piglet_sprite.draw(screen)
         bar_sprite.draw(screen)
-
-        font = pygame.font.Font(None, 74)
-        text = font.render(str(score_left), 1, (255,255,255))
-        screen.blit(text, (250,10))
-        text = font.render(str(score_right), 1, (255,255,255))
-        screen.blit(text, (420,10))
+        score_sprite.draw(screen)
+        
         
         pygame.display.flip()
+
+#---------------------------------------------------------------------
+#                       DIFFICULTY LEVELS
+#---------------------------------------------------------------------
 
 def set_difficulty():
     pass
 
+#---------------------------------------------------------------------
+#                         WINDOW AND MENU
+#---------------------------------------------------------------------
 
+screen_size = (800, 600)
 pygame.init()
 screen = pygame.display.set_mode(screen_size) 
 pygame.display.set_caption("Ping P-oink!")
 background = get_image("oink.png")
 screen.blit(background,(0,0))
+oink = get_sound("oink.wav")
+wolf = get_sound("wolf.wav")
+
 menu = pygame_menu.Menu(300, 400, 'Welcome',
                        theme=pygame_menu.themes.THEME_BLUE)
 
