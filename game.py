@@ -1,8 +1,10 @@
+from typing_extensions import runtime
 import pygame
 import pygame_menu
 from pygame.locals import *
 import os.path
 from random import randint
+import time
 
 #easy: normal ping-pong
 #medium: changing sizes of piglet
@@ -34,7 +36,7 @@ def get_sound(name):
 class Piglet(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = get_image("pig.png",True)
+        self.image = get_image(pic_name,True)
         self.rect = self.image.get_rect()
         self.rect.center = (screen_size[0]/2,screen_size[1]/2)
         self.x_velocity = 6
@@ -52,11 +54,13 @@ class Piglet(pygame.sprite.Sprite):
 #---------------------------------------------------------------------
 
 class Bar(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, place):
         pygame.sprite.Sprite.__init__(self)
-        self.image = get_image("bar2.png")
+        self.place = place
+        self.image = get_image(bar_pic)
+        self.hits = 0
         self.rect = self.image.get_rect()
-        self.rect.center = (24*screen_size[0]/25,screen_size[1])
+        self.rect.center = self.place
         self.x_velocity = 0
         self.y_velocity = 0
 
@@ -76,19 +80,85 @@ class Bar(pygame.sprite.Sprite):
 #---------------------------------------------------------------------
 
 class ScoreBoard(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, name:str, place:tuple):
         pygame.sprite.Sprite.__init__(self)
+        self.name = name
+        self.place = place
+        self.maxpoints = 0
         self.points = 0
-        self.wins = 0
-        self.text = "Points: "+str(self.points)+"\n Wins: "+str(self.wins)
+        self.text = self.name+": "+str(self.maxpoints)
         self.font = pygame.font.SysFont(None,50)
         self.image = self.font.render(self.text,1,(255,255,255))
         self.rect = self.image.get_rect()
+        self.rect.center = self.place
+
 
     def update(self):
-        self.text = "Points: "+str(self.points)+"\n Wins: "+str(self.wins)
+        if self.points > self.maxpoints:
+            self.maxpoints = self.points
+        self.text = self.name+": "+str(self.maxpoints)
         self.image = self.font.render(self.text,1,(255,255,255))
         self.rect = self.image.get_rect()
+        self.rect.center = self.place
+
+#---------------------------------------------------------------------
+#                         COUNTING LIVES
+#---------------------------------------------------------------------
+
+class Lives(pygame.sprite.Sprite):
+    def __init__(self, place:tuple):
+        pygame.sprite.Sprite.__init__(self)
+        self.place = place
+        self.maxpoints = 0
+        self.points = 0
+        self.lives = 5
+        self.image = get_image("heart"+str(self.lives)+".png", True)
+        self.rect = self.image.get_rect()
+        self.rect.center = self.place
+
+    def update(self):
+
+        if self.lives <= 0:
+            self.text = "You've lost"
+            self.font = pygame.font.SysFont(None,50)
+            self.image = self.font.render(self.text,1,(255,255,255))
+            self.rect = self.image.get_rect()
+            self.rect.center = self.place
+        else:
+            self.image = get_image("heart"+str(self.lives)+".png", True)
+            self.rect = self.image.get_rect()
+            self.rect.center = self.place
+
+#---------------------------------------------------------------------
+#                            GAME OVER
+#---------------------------------------------------------------------
+
+class Game_over(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = get_image("game_over.png")
+        self.rect = self.image.get_rect()
+        self.rect.center = (screen_size[0]/2,screen_size[1]/2)
+
+#---------------------------------------------------------------------
+#                           BEST SCORES
+#---------------------------------------------------------------------
+
+#class BestScores(pygame.sprite.Sprite):
+ #   def __init__(self):
+  #      pygame.sprite.Sprite.__init__(self)
+   #     self.maxpoints = 0
+    #    self.text = "Points "+str(self.maxpoints)
+     #   self.font = pygame.font.SysFont(None,50)
+      #  self.image = self.font.render(self.text,1,(255,255,255))
+       # self.rect = self.image.get_rect()
+    
+#    def update(self):
+ #       if self.points > self.maxpoints:
+  #          self.maxpoints = self.points
+   #     self.text = "Points: "+str(self.maxpoints)
+    #    self.image = self.font.render(self.text,1,(255,255,255))
+     #   self.rect = self.image.get_rect()
 
 #---------------------------------------------------------------------
 #                               GAME
@@ -96,26 +166,48 @@ class ScoreBoard(pygame.sprite.Sprite):
 
 def game():
 
+    # executing options
+    background = get_image(background_name)
     screen.blit(background,(0,0))
+    if pic_name == "pig.png":
+        animal_sound = get_sound("oink.wav")
+    elif pic_name == "duck.png":
+        animal_sound = get_sound("kwak.wav")
+    else:
+        animal_sound = get_sound("meow.wav")
+    screen.blit(background,(0,0))
+
+    # creating sprites
     piglet_sprite = pygame.sprite.RenderClear() 
     piglet = Piglet()
     piglet_sprite.add(piglet)
 
     bar_sprite = pygame.sprite.RenderClear() 
-    bar_right = Bar()
-    bar_left = Bar()
-    bar_left.rect.center = (1*screen_size[0]/25,screen_size[1])
+    bar_right = Bar((24*screen_size[0]/25,screen_size[1]))
+    bar_left = Bar((1*screen_size[0]/25,screen_size[1]))
     bar_sprite.add(bar_right)
     bar_sprite.add(bar_left)
+
     score_sprite = pygame.sprite.RenderClear()
-    score_left = ScoreBoard()
-    score_right = ScoreBoard()
-    score_right.rect.center = (20*screen_size[0]/25,30)
+    score_left = ScoreBoard(left_name, (5*screen_size[0]/25,30))
+    score_right = ScoreBoard(right_name, (20*screen_size[0]/25,30))
     score_sprite.add(score_left)
     score_sprite.add(score_right)
     score_sprite.draw(screen)
+
+    lives_sprite = pygame.sprite.RenderClear()
+    lives_left = Lives((5*screen_size[0]/25,60))
+    lives_right = Lives((20*screen_size[0]/25,60))
+    lives_sprite.add(lives_left)
+    lives_sprite.add(lives_right)
+
+    game_over_sprite = pygame.sprite.RenderClear()
+    game_over = Game_over()
+    game_over_sprite.add(game_over)
+
     pygame.display.flip()
 
+    # running
     clock = pygame.time.Clock()
     run = True
 
@@ -144,52 +236,67 @@ def game():
                     bar_right.y_velocity = 0
                 elif event.key == K_DOWN:
                     bar_right.y_velocity = 0
-            
+        
         piglet_sprite.update()
         bar_sprite.update()
 
+        #checking if pig hits the wall and adding points
+
         if piglet.rect.x>=screen_size[0]-10: #right
             wolf.play()
-            score_left.wins += 1
+            lives_right.lives -= 1
+            if lives_right.lives <= 0:
+                run = False
+            else:
+                lives_sprite.update()
             score_right.points = 0
+            bar_left.hits = 0
+            bar_right.hits = 0
             score_sprite.update()
-            score_right.rect.center = (20*screen_size[0]/25,30)
-            score_sprite.clear(screen, background)
-            score_sprite.draw(screen)
-            piglet.rect.center = (screen_size[0]/2,screen_size[1]/2)
-            piglet.x_velocity = 6
-            piglet.y_velocity = randint(-8,8)
-        if piglet.rect.x<=0: #left
-            wolf.play()
-            score_right.wins += 1
-            score_left.points = 0
-            score_sprite.update()
-            score_right.rect.center = (20*screen_size[0]/25,30)
             score_sprite.clear(screen, background)
             score_sprite.draw(screen)
             piglet.rect.center = (screen_size[0]/2,screen_size[1]/2)
             piglet.x_velocity = -6
             piglet.y_velocity = randint(-8,8)
-            piglet.x_velocity = -piglet.x_velocity
+        if piglet.rect.x<=0: #left
+            wolf.play()
+            lives_left.lives -= 1
+            if lives_left.lives <= 0:
+                run = False
+            else:
+                lives_sprite.update()
+            score_left.points = 0
+            bar_left.hits = 0
+            bar_right.hits = 0
+            score_sprite.update()
+            score_sprite.clear(screen, background)
+            score_sprite.draw(screen)
+            piglet.rect.center = (screen_size[0]/2,screen_size[1]/2)
+            piglet.x_velocity = 6
+            piglet.y_velocity = randint(-8,8)
         if piglet.rect.y>screen_size[1]-30: #down
             piglet.y_velocity = -piglet.y_velocity
         if piglet.rect.y<=0: #up
             piglet.y_velocity = -piglet.y_velocity 
+        
+        #checking collisions
 
         if pygame.sprite.collide_mask(piglet, bar_left):
-            oink.play()
-            score_left.points += 1
+            if bar_left.hits == bar_right.hits or bar_left.hits+1 == bar_right.hits:
+                animal_sound.play()
+                bar_left.hits += 1
+                score_left.points += 1
             score_sprite.update()
-            score_right.rect.center = (20*screen_size[0]/25,30)
             score_sprite.clear(screen, background)
             score_sprite.draw(screen)
             piglet.hit()
         
         if pygame.sprite.collide_mask(piglet, bar_right):
-            oink.play()
-            score_right.points += 1 
+            if bar_right.hits == bar_left.hits or bar_right.hits+1 == bar_left.hits:
+                animal_sound.play()
+                bar_right.hits += 1
+                score_right.points += 1
             score_sprite.update()
-            score_right.rect.center = (20*screen_size[0]/25,30)
             score_sprite.clear(screen, background)
             score_sprite.draw(screen)
             piglet.hit()
@@ -198,19 +305,113 @@ def game():
         piglet_sprite.clear(screen, background)
         bar_sprite.clear(screen, background)
         score_sprite.clear(screen, background)
+        lives_sprite.clear(screen, background)
+        game_over_sprite.clear(screen, background)
         piglet_sprite.draw(screen)
         bar_sprite.draw(screen)
         score_sprite.draw(screen)
+        lives_sprite.draw(screen)
+        if lives_left.lives == 0 or lives_right.lives == 0:
+            game_over_sprite.draw(screen)
+            pygame.display.flip()
+            time.sleep(5)
         
         
         pygame.display.flip()
 
 #---------------------------------------------------------------------
-#                       DIFFICULTY LEVELS
+#                           OPTIONS
 #---------------------------------------------------------------------
 
-def set_difficulty():
-    pass
+def set_animal(event1, event2):
+    global pic_name
+    if event2 == 2:
+        pic_name = "cat.png"
+    elif event2 == 3:
+        pic_name = "duck.png"
+    else:
+        pic_name = "pig.png"
+
+def set_background(event1, event2):
+    global background_name
+    if event2 == 2:
+        background_name = "park.png"
+    else:
+        background_name = "oink.png"
+
+#---------------------------------------------------------------------
+#                             RULES
+#---------------------------------------------------------------------
+
+def rules():
+    rules_pic = get_image("rules.png")
+    screen.blit(rules_pic,(0,0))
+    pygame.display.flip()
+
+    clock = pygame.time.Clock()
+    run = True
+    while run:
+        clock.tick(40)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+            elif event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    run = False
+
+#---------------------------------------------------------------------
+#                            SCORES
+#---------------------------------------------------------------------
+
+def scores():
+    if os.path.exists('score_table.txt'):
+            with open('score_table.txt', 'r') as table_file:
+                data = table_file.read()
+
+#---------------------------------------------------------------------
+#                            AUTHOR
+#---------------------------------------------------------------------
+
+def author():
+    author_pic = get_image("author.png")
+    screen.blit(author_pic,(0,0))
+    pygame.display.flip()
+
+    clock = pygame.time.Clock()
+    run = True
+    while run:
+        clock.tick(40)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+            elif event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    run = False
+
+#---------------------------------------------------------------------
+#                         SETTING NAME
+#---------------------------------------------------------------------
+
+def set_left_name(event):
+    global left_name
+    left_name = event
+
+def set_right_name(event):
+    global right_name
+    right_name = event
+
+#---------------------------------------------------------------------
+#                         SETTING DIFFICULTY
+#---------------------------------------------------------------------
+
+def set_difficulty(event1, event2):
+    global bar_pic
+    if event2 == 2:
+        bar_pic = "bar2.png"
+    elif event2 == 3:
+        bar_pic = "bar1.png"
+    else:
+        bar_pic = "bar3.png"
 
 #---------------------------------------------------------------------
 #                         WINDOW AND MENU
@@ -220,16 +421,30 @@ screen_size = (800, 600)
 pygame.init()
 screen = pygame.display.set_mode(screen_size) 
 pygame.display.set_caption("Ping P-oink!")
-background = get_image("oink.png")
-screen.blit(background,(0,0))
-oink = get_sound("oink.wav")
+background_name = "oink.png"
 wolf = get_sound("wolf.wav")
+pic_name = "pig.png"
+left_name = "Player 1"
+right_name = "Player 2"
+bar_pic = "bar3.png"
 
-menu = pygame_menu.Menu(300, 400, 'Welcome',
-                       theme=pygame_menu.themes.THEME_BLUE)
+# creatin menu theme
+menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title_background_color=(247, 136, 181), title_font_color = (0,0,0), title_font = pygame_menu.font.FONT_COMIC_NEUE, selection_color = (247, 136, 181, 1))
+menu_pic = pygame_menu.baseimage.BaseImage(image_path=os.path.join('DATA', "menu.png"), drawing_mode=pygame_menu.baseimage.IMAGE_MODE_REPEAT_XY)
+menu_theme.background_color = menu_pic
+menu_theme.widget_font = pygame_menu.font.FONT_COMIC_NEUE
+menu = pygame_menu.Menu(screen_size[1], screen_size[0], 'PING P-OINK!',
+                       theme=menu_theme)
 
-menu.add.text_input('Name :', default='Gracz')
-menu.add.selector('Difficulty :', [('Hard', 1), ('Easy', 2)], onchange=set_difficulty)
-menu.add.button('Play', game)
+
+menu.add.button('Play', game, font_color = (0, 0, 0), font_size = 100)
+menu.add.text_input("Name :", default='Player 1', onchange=set_left_name)
+menu.add.text_input("Name :", default='Player 2', onchange=set_right_name)
+menu.add.selector('Difficulty :', [('Easy', 1), ('Medium', 2), ("Hard", 3)], onchange=set_difficulty)
+menu.add.selector('Animal :', [('Piglet', 1), ('Cat', 2), ("Duck", 3)], onchange=set_animal)
+menu.add.selector('Background :', [('PING P-OINK!', 1), ('park', 2)], onchange=set_background)
+menu.add.button('Game rules', rules)
+menu.add.button('Best scores', scores)
+menu.add.button('About the author', author)
 menu.add.button('Quit', pygame_menu.events.EXIT)
 menu.mainloop(screen)
