@@ -164,6 +164,26 @@ class BestScores(pygame.sprite.Sprite):
         self.rect.center = self.place
 
 #---------------------------------------------------------------------
+#                       ABOUT THE AUTHOR
+#---------------------------------------------------------------------
+
+class Show_text(pygame.sprite.Sprite):
+    def __init__(self, type_text:str, place:tuple):
+        pygame.sprite.Sprite.__init__(self)
+        self.text = type_text
+        self.font = pygame.font.SysFont(None,50)
+        self.image = self.font.render(self.text,1,(255,255,255))
+        self.rect = self.image.get_rect()
+        self.rect.center = place
+
+class Show_picture(pygame.sprite.Sprite):
+    def __init__(self, picture, place:tuple):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = get_image(picture)
+        self.rect = self.image.get_rect()
+        self.rect.center = place
+
+#---------------------------------------------------------------------
 #                               GAME
 #---------------------------------------------------------------------
 
@@ -177,7 +197,7 @@ def game():
     elif pic_name == "duck.png":
         animal_sound = get_sound("kwak.wav")
     else:
-        animal_sound = get_sound("meow.wav")
+        animal_sound = get_sound("mee.wav")
     screen.blit(background,(0,0))
 
     # creating sprites
@@ -345,7 +365,8 @@ def game():
                             for k in range(7,i-1,-1):
                                 list_of_scores[k+2] = list_of_scores[k]
                             list_of_scores[i] = [score_left.name, score_left.maxpoints]
-                            list_of_scores[i+1] = [score_right.name, score_right.maxpoints]
+                            if i+1 <= 9:
+                                list_of_scores[i+1] = [score_right.name, score_right.maxpoints]
             write_to_file(list_of_scores)
 
             game_over_sprite.draw(screen)
@@ -362,7 +383,7 @@ def game():
 def set_animal(event1, event2):
     global pic_name
     if event2 == 2:
-        pic_name = "cat.png"
+        pic_name = "sheep.png"
     elif event2 == 3:
         pic_name = "duck.png"
     else:
@@ -371,7 +392,7 @@ def set_animal(event1, event2):
 def set_background(event1, event2):
     global background_name
     if event2 == 2:
-        background_name = "park.png"
+        background_name = "pond.png"
     else:
         background_name = "oink.png"
 
@@ -430,8 +451,14 @@ def scores():
 #---------------------------------------------------------------------
 
 def author():
-    author_pic = get_image("author.png")
-    screen.blit(author_pic,(0,0))
+    author_background = get_image("menu.png")
+    screen.blit(author_background,(0,0))
+    author_pic = Show_picture("author.png", (screen_size[0]/2, screen_size[1]/2))
+    author_pic_sprite = pygame.sprite.RenderClear()
+    author_pic_sprite.add(author_pic)
+    author_pic_sprite.clear(screen, author_background)
+    author_pic_sprite.draw(screen)
+
     pygame.display.flip()
 
     clock = pygame.time.Clock()
@@ -507,8 +534,8 @@ menu.add.button('Play', game, font_color = (0, 0, 0), font_size = 100)
 menu.add.text_input("Name :", default='Player 1', onchange=set_left_name)
 menu.add.text_input("Name :", default='Player 2', onchange=set_right_name)
 menu.add.selector('Difficulty :', [('Easy', 1), ('Medium', 2), ("Hard", 3)], onchange=set_difficulty)
-menu.add.selector('Animal :', [('Piglet', 1), ('Cat', 2), ("Duck", 3)], onchange=set_animal)
-menu.add.selector('Background :', [('PING P-OINK!', 1), ('park', 2)], onchange=set_background)
+menu.add.selector('Animal :', [('Piglet', 1), ('Sheep', 2), ("Duck", 3)], onchange=set_animal)
+menu.add.selector('Background :', [('PING P-OINK!', 1), ('Pond', 2)], onchange=set_background)
 menu.add.button('Game rules', rules)
 menu.add.button('Best scores', scores)
 menu.add.button('About the author', author)
