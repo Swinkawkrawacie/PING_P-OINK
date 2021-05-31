@@ -29,6 +29,10 @@ def get_sound(name):
     sound = pygame.mixer.Sound(fullname)
     return sound
 
+def write_to_file(data:list):
+    with open('score_table.txt', 'w+') as table_file:
+        table_file.write(str(data))
+
 #---------------------------------------------------------------------
 #                            PIGLET
 #---------------------------------------------------------------------
@@ -144,21 +148,20 @@ class Game_over(pygame.sprite.Sprite):
 #                           BEST SCORES
 #---------------------------------------------------------------------
 
-#class BestScores(pygame.sprite.Sprite):
- #   def __init__(self):
-  #      pygame.sprite.Sprite.__init__(self)
-   #     self.maxpoints = 0
-    #    self.text = "Points "+str(self.maxpoints)
-     #   self.font = pygame.font.SysFont(None,50)
-      #  self.image = self.font.render(self.text,1,(255,255,255))
-       # self.rect = self.image.get_rect()
-    
-#    def update(self):
- #       if self.points > self.maxpoints:
-  #          self.maxpoints = self.points
-   #     self.text = "Points: "+str(self.maxpoints)
-    #    self.image = self.font.render(self.text,1,(255,255,255))
-     #   self.rect = self.image.get_rect()
+class BestScores(pygame.sprite.Sprite):
+    def __init__(self, number:int, score:list, place:tuple):
+        pygame.sprite.Sprite.__init__(self)
+        self.number = number
+        self.score = score
+        self.place = place
+        if score[1] == 0:
+            self.text = str(self.number+1)+'. NO DATA'
+        else:
+            self.text = str(self.number+1)+'. '+score[0]+' - '+str(score[1])+'p'
+        self.font = pygame.font.SysFont(None,50)
+        self.image = self.font.render(self.text,1,(255,255,255))
+        self.rect = self.image.get_rect()
+        self.rect.center = self.place
 
 #---------------------------------------------------------------------
 #                               GAME
@@ -216,9 +219,11 @@ def game():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+                lives_left.lives = 0
             elif event.type == KEYDOWN:
                 if event.key == K_ESCAPE:
                     run = False
+                    lives_left.lives = 0
                 elif event.key == K_w:
                     bar_left.y_velocity = -8
                 elif event.key == K_s:
@@ -311,7 +316,38 @@ def game():
         bar_sprite.draw(screen)
         score_sprite.draw(screen)
         lives_sprite.draw(screen)
+
+
+
         if lives_left.lives == 0 or lives_right.lives == 0:
+            found = False
+            if score_left.maxpoints > score_right.maxpoints:
+                for i in range(10):
+                    if not found:
+                        if list_of_scores[i][1] <= score_left.maxpoints:
+                            found = True
+                            for k in range(8,i-1,-1):
+                                list_of_scores[k+1] = list_of_scores[k]
+                            list_of_scores[i] = [score_left.name, score_left.maxpoints]
+            elif score_right.maxpoints > score_left.maxpoints:
+                for i in range(10):
+                    if not found:
+                        if list_of_scores[i][1] <= score_right.maxpoints:
+                            found = True
+                            for k in range(8,i-1,-1):
+                                list_of_scores[k+1] = list_of_scores[k]
+                            list_of_scores[i] = [score_right.name, score_right.maxpoints]
+            else:
+                for i in range(10):
+                    if not found:
+                        if list_of_scores[i][1] <= score_left.maxpoints:
+                            found = True
+                            for k in range(7,i-1,-1):
+                                list_of_scores[k+2] = list_of_scores[k]
+                            list_of_scores[i] = [score_left.name, score_left.maxpoints]
+                            list_of_scores[i+1] = [score_right.name, score_right.maxpoints]
+            write_to_file(list_of_scores)
+
             game_over_sprite.draw(screen)
             pygame.display.flip()
             time.sleep(5)
@@ -364,9 +400,30 @@ def rules():
 #---------------------------------------------------------------------
 
 def scores():
-    if os.path.exists('score_table.txt'):
-            with open('score_table.txt', 'r') as table_file:
-                data = table_file.read()
+    scores_pic = get_image("menu.png")
+    screen.blit(scores_pic,(0,0))
+    
+    best_scores_sprite = pygame.sprite.RenderClear()
+    position = [screen_size[0]/2, 50]
+    for i in range(10):
+        best_scores_sprite.add(BestScores(i, list_of_scores[i], position))
+        position[1] += 50
+    best_scores_sprite.clear(screen, scores_pic)
+    best_scores_sprite.draw(screen)
+    pygame.display.flip()
+
+    clock = pygame.time.Clock()
+    run = True
+    while run:
+        clock.tick(40)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+            elif event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    run = False
+
+
 
 #---------------------------------------------------------------------
 #                            AUTHOR
@@ -428,8 +485,17 @@ left_name = "Player 1"
 right_name = "Player 2"
 bar_pic = "bar3.png"
 
+if os.path.exists('score_table.txt'):
+    with open('score_table.txt', 'r') as table_file:
+        score_table = table_file.read()
+        #jeszcze obsługę błędów dopisać
+    list_of_scores = eval(score_table)
+else:
+    list_of_scores = [['',0] for i in range(10)]
+
+
 # creatin menu theme
-menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title_background_color=(247, 136, 181), title_font_color = (0,0,0), title_font = pygame_menu.font.FONT_COMIC_NEUE, selection_color = (247, 136, 181, 1))
+menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title_background_color=(247, 136, 181), title_font_color = (0,0,0), title_font = pygame_menu.font.FONT_COMIC_NEUE, selection_color = (255, 0, 102, 1))
 menu_pic = pygame_menu.baseimage.BaseImage(image_path=os.path.join('DATA', "menu.png"), drawing_mode=pygame_menu.baseimage.IMAGE_MODE_REPEAT_XY)
 menu_theme.background_color = menu_pic
 menu_theme.widget_font = pygame_menu.font.FONT_COMIC_NEUE
