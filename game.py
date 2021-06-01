@@ -1,3 +1,4 @@
+from genericpath import isdir
 from typing_extensions import runtime
 import pygame
 import pygame_menu
@@ -6,17 +7,26 @@ import os.path
 from random import randint
 import time
 
-#easy: normal ping-pong
-#medium: changing sizes of piglet
-#hard: more piglets
-#single mode???
-
 
 #---------------------------------------------------------------------
 #                           FUNCTIONS
 #---------------------------------------------------------------------
 
-def get_image(name, color = False):
+def get_image(name:str, color:bool = False):
+    """
+    Get image from a given file name
+
+    @param name: (str) name of the image file
+    @param color: (bool) information if the background of the image should be transparent (default = False)
+    @return: (pygame.Surface) requested image
+    @raise TypeError: if type of given data is incorrect
+    @raise ValueError: if value of given data is incorrect
+    """
+    if not (isinstance(name, str) and isinstance(color, bool)):
+        raise TypeError
+    if not os.path.exists('DATA/'+name):
+        raise ValueError
+
     image = pygame.image.load(os.path.join('DATA', name))
     image = image.convert()
     if color == True:
@@ -24,12 +34,34 @@ def get_image(name, color = False):
         image.set_colorkey(colorkey,RLEACCEL)
     return image
 
-def get_sound(name):
+def get_sound(name:str):
+    """
+    Get sound from a given file name
+
+    @param name: (str) name of the sound file
+    @return: (Sound) requested image
+    @raise TypeError: if type of given data is incorrect
+    @raise ValueError: if value of given data is incorrect
+    """
+    if not isinstance(name, str):
+        raise TypeError
+    if not os.path.exists('DATA/'+name):
+        raise ValueError
+
     fullname = os.path.join("DATA",name)
     sound = pygame.mixer.Sound(fullname)
     return sound
 
 def write_to_file(data:list):
+    """
+    Write new data to score_table.txt
+
+    @param data: (list) list of data to write into the file
+    @raise TypeError: of type of given data is incorrect
+    """
+    if not isinstance(data, list):
+        raise TypeError
+
     with open('score_table.txt', 'w+') as table_file:
         table_file.write(str(data))
 
@@ -38,6 +70,9 @@ def write_to_file(data:list):
 #---------------------------------------------------------------------
 
 class Piglet(pygame.sprite.Sprite):
+    """
+    Creation of a piglet
+    """
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.image = get_image(pic_name,True)
@@ -47,9 +82,15 @@ class Piglet(pygame.sprite.Sprite):
         self.y_velocity = randint(-8,8)
 
     def update(self):
+        """
+        Move the piglet
+        """
         self.rect.move_ip((self.x_velocity,self.y_velocity))
 
     def hit(self):
+        """
+        Change the direction of the piglet's movement
+        """
         self.x_velocity = -self.x_velocity
         self.y_velocity = randint(-8,8)
 
@@ -58,6 +99,9 @@ class Piglet(pygame.sprite.Sprite):
 #---------------------------------------------------------------------
 
 class Bar(pygame.sprite.Sprite):
+    """
+    Creation of a paddles
+    """
     def __init__(self, place):
         pygame.sprite.Sprite.__init__(self)
         self.place = place
@@ -69,21 +113,24 @@ class Bar(pygame.sprite.Sprite):
         self.y_velocity = 0
 
     def update(self):
+        """
+        Move the paddle
+        """
         self.rect.move_ip((self.x_velocity,self.y_velocity))
 
         if self.rect.top < 0:
             self.rect.top = 0
         elif self.rect.bottom >= screen_size[1]:
             self.rect.bottom = screen_size[1]
-    
-    def change_pos(self, width, height):
-        self.rect.center = (width, height)
-    
+
 #---------------------------------------------------------------------
 #                           SCORE BOARD
 #---------------------------------------------------------------------
 
 class ScoreBoard(pygame.sprite.Sprite):
+    """
+    Creation of a scoreboard
+    """
     def __init__(self, name:str, place:tuple):
         pygame.sprite.Sprite.__init__(self)
         self.name = name
@@ -98,6 +145,9 @@ class ScoreBoard(pygame.sprite.Sprite):
 
 
     def update(self):
+        """
+        Update results on the scoreboard
+        """
         if self.points > self.maxpoints:
             self.maxpoints = self.points
         self.text = self.name+": "+str(self.maxpoints)
@@ -110,6 +160,9 @@ class ScoreBoard(pygame.sprite.Sprite):
 #---------------------------------------------------------------------
 
 class Lives(pygame.sprite.Sprite):
+    """
+    Creation of a live counter
+    """
     def __init__(self, place:tuple):
         pygame.sprite.Sprite.__init__(self)
         self.place = place
@@ -121,7 +174,9 @@ class Lives(pygame.sprite.Sprite):
         self.rect.center = self.place
 
     def update(self):
-
+        """
+        Change the amount of the hearts on the live counter
+        """
         if self.lives <= 0:
             self.text = "You've lost"
             self.font = pygame.font.SysFont(None,50)
@@ -136,8 +191,9 @@ class Lives(pygame.sprite.Sprite):
 #---------------------------------------------------------------------
 #                            GAME OVER
 #---------------------------------------------------------------------
-
+#DELETE
 class Game_over(pygame.sprite.Sprite):
+
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.image = get_image("game_over.png")
@@ -149,6 +205,9 @@ class Game_over(pygame.sprite.Sprite):
 #---------------------------------------------------------------------
 
 class BestScores(pygame.sprite.Sprite):
+    """
+    Creation of a best scores list
+    """
     def __init__(self, number:int, score:list, place:tuple):
         pygame.sprite.Sprite.__init__(self)
         self.number = number
@@ -168,15 +227,21 @@ class BestScores(pygame.sprite.Sprite):
 #---------------------------------------------------------------------
 
 class Show_text(pygame.sprite.Sprite):
+    """
+    Preparation for displaying a text
+    """
     def __init__(self, type_text:str, place:tuple):
         pygame.sprite.Sprite.__init__(self)
         self.text = type_text
-        self.font = pygame.font.SysFont(None,50)
+        self.font = pygame.font.SysFont(None,30)
         self.image = self.font.render(self.text,1,(255,255,255))
         self.rect = self.image.get_rect()
         self.rect.center = place
 
 class Show_picture(pygame.sprite.Sprite):
+    """
+    Preparation for displaying a picture
+    """
     def __init__(self, picture, place:tuple):
         pygame.sprite.Sprite.__init__(self)
         self.image = get_image(picture)
@@ -188,7 +253,9 @@ class Show_picture(pygame.sprite.Sprite):
 #---------------------------------------------------------------------
 
 def game():
-
+    """
+    Display of the game
+    """
     # executing options
     background = get_image(background_name)
     screen.blit(background,(0,0))
@@ -381,6 +448,9 @@ def game():
 #---------------------------------------------------------------------
 
 def set_animal(event1, event2):
+    """
+    Set the animal of the user's choice
+    """
     global pic_name
     if event2 == 2:
         pic_name = "sheep.png"
@@ -390,6 +460,15 @@ def set_animal(event1, event2):
         pic_name = "pig.png"
 
 def set_background(event1, event2):
+    """
+    Set the background of the user's choice
+
+    @param event1: (tuple) !!!!!!!!
+    @param event2: (int) the number of the option
+    @raise TypeError: if type of given data is incorrect
+    """
+    if not (isinstance(event1,tuple) and isinstance(event2,int)):
+        raise TypeError
     global background_name
     if event2 == 2:
         background_name = "pond.png"
@@ -401,6 +480,9 @@ def set_background(event1, event2):
 #---------------------------------------------------------------------
 
 def rules():
+    """
+
+    """
     rules_pic = get_image("rules.png")
     screen.blit(rules_pic,(0,0))
     pygame.display.flip()
@@ -421,6 +503,9 @@ def rules():
 #---------------------------------------------------------------------
 
 def scores():
+    """
+    Display the best scores
+    """
     scores_pic = get_image("menu.png")
     screen.blit(scores_pic,(0,0))
     
@@ -451,12 +536,27 @@ def scores():
 #---------------------------------------------------------------------
 
 def author():
+    """
+    Display the note and picture about the author
+    """
     author_background = get_image("menu.png")
     screen.blit(author_background,(0,0))
-    author_pic = Show_picture("author.png", (screen_size[0]/2, screen_size[1]/2))
+    with open("DATA/author.txt", 'r') as text_file:
+        text_data = text_file.readlines()
+    author_text = []
+    position = [screen_size[0]/2, screen_size[1]/5]
+    for i in text_data:
+        author_text += [Show_text(i[:-1], tuple(position))]
+        position[1] += 40
+    author_pic = Show_picture("author.png", (screen_size[0]/2, 3*screen_size[1]/4))
     author_pic_sprite = pygame.sprite.RenderClear()
+    author_text_sprite = pygame.sprite.RenderClear()
     author_pic_sprite.add(author_pic)
+    for i in author_text:
+        author_text_sprite.add(i)
     author_pic_sprite.clear(screen, author_background)
+    author_text_sprite.clear(screen, author_background)
+    author_text_sprite.draw(screen)
     author_pic_sprite.draw(screen)
 
     pygame.display.flip()
@@ -477,10 +577,26 @@ def author():
 #---------------------------------------------------------------------
 
 def set_left_name(event):
+    """
+    Set the name of the left player
+
+    @param event: (str) name given by the user
+    @raise TypeError: if type of given data is incorrect
+    """
+    if not isinstance(event,str):
+        raise TypeError
     global left_name
     left_name = event
 
 def set_right_name(event):
+    """
+    Set the name of the right player
+
+    @param event: (str) name given by the user
+    @raise TypeError: if type of given data is incorrect
+    """
+    if not isinstance(event,str):
+        raise TypeError
     global right_name
     right_name = event
 
@@ -489,6 +605,15 @@ def set_right_name(event):
 #---------------------------------------------------------------------
 
 def set_difficulty(event1, event2):
+    """
+    Set the difficulty to the level of the user's choice
+
+    @param event1: (tuple) !!!!!!!!
+    @param event2: (int) the number of the option
+    @raise TypeError: if type of given data is incorrect
+    """
+    if not (isinstance(event1, tuple) and isinstance(event2, int)):
+        raise TypeError
     global bar_pic
     if event2 == 2:
         bar_pic = "bar2.png"
