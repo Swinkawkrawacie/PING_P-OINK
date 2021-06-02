@@ -1,0 +1,8 @@
+Move paddles and don't let the animal run away from the wolves' trap!
+To move the paddles use:
+[W], [S] for the left one,
+[up], [down] for the right one.
+Points represent the maximal amount of hits without losing the animal.
+You have only 5 lives, so try not to die.
+You can leave using [esc] or simply closing the window.
+Good Luck!

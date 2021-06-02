@@ -102,7 +102,12 @@ class Bar(pygame.sprite.Sprite):
     """
     Creation of a paddles
     """
-    def __init__(self, place):
+    def __init__(self, place:tuple):
+        """
+        Create a bar in a specific place
+
+        @param place: (tuple) position of the bar on the screen
+        """
         pygame.sprite.Sprite.__init__(self)
         self.place = place
         self.image = get_image(bar_pic)
@@ -132,6 +137,12 @@ class ScoreBoard(pygame.sprite.Sprite):
     Creation of a scoreboard
     """
     def __init__(self, name:str, place:tuple):
+        """
+        Create a scoreboard in a specific place
+
+        @param name: (str) name of the player
+        @param place: (tuple) position of the scoreboard on the screen
+        """
         pygame.sprite.Sprite.__init__(self)
         self.name = name
         self.place = place
@@ -142,7 +153,6 @@ class ScoreBoard(pygame.sprite.Sprite):
         self.image = self.font.render(self.text,1,(255,255,255))
         self.rect = self.image.get_rect()
         self.rect.center = self.place
-
 
     def update(self):
         """
@@ -164,6 +174,11 @@ class Lives(pygame.sprite.Sprite):
     Creation of a live counter
     """
     def __init__(self, place:tuple):
+        """
+        Create a live counter in a specific place
+
+        @param place: (tuple) position of the live counter on the screen
+        """
         pygame.sprite.Sprite.__init__(self)
         self.place = place
         self.maxpoints = 0
@@ -179,7 +194,7 @@ class Lives(pygame.sprite.Sprite):
         """
         if self.lives <= 0:
             self.text = "You've lost"
-            self.font = pygame.font.SysFont(None,50)
+            self.font = pygame.font.SysFont(None,30)
             self.image = self.font.render(self.text,1,(255,255,255))
             self.rect = self.image.get_rect()
             self.rect.center = self.place
@@ -187,18 +202,6 @@ class Lives(pygame.sprite.Sprite):
             self.image = get_image("heart"+str(self.lives)+".png", True)
             self.rect = self.image.get_rect()
             self.rect.center = self.place
-
-#---------------------------------------------------------------------
-#                            GAME OVER
-#---------------------------------------------------------------------
-#DELETE
-class Game_over(pygame.sprite.Sprite):
-
-    def __init__(self):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = get_image("game_over.png")
-        self.rect = self.image.get_rect()
-        self.rect.center = (screen_size[0]/2,screen_size[1]/2)
 
 #---------------------------------------------------------------------
 #                           BEST SCORES
@@ -209,6 +212,13 @@ class BestScores(pygame.sprite.Sprite):
     Creation of a best scores list
     """
     def __init__(self, number:int, score:list, place:tuple):
+        """
+        Create a best scores list in a specific place
+
+        @param number: (int) number of the line
+        @param score: (list) data in the line
+        @param place: (tuple) position of the line on the screen
+        """
         pygame.sprite.Sprite.__init__(self)
         self.number = number
         self.score = score
@@ -223,7 +233,7 @@ class BestScores(pygame.sprite.Sprite):
         self.rect.center = self.place
 
 #---------------------------------------------------------------------
-#                       ABOUT THE AUTHOR
+#                       AUTHOR AND RULES
 #---------------------------------------------------------------------
 
 class Show_text(pygame.sprite.Sprite):
@@ -231,6 +241,12 @@ class Show_text(pygame.sprite.Sprite):
     Preparation for displaying a text
     """
     def __init__(self, type_text:str, place:tuple):
+        """
+        Create a text in a specific place
+
+        @param type_text: (str) text to show on the screen
+        @param place: (tuple) position of the text on the screen
+        """
         pygame.sprite.Sprite.__init__(self)
         self.text = type_text
         self.font = pygame.font.SysFont(None,30)
@@ -243,6 +259,12 @@ class Show_picture(pygame.sprite.Sprite):
     Preparation for displaying a picture
     """
     def __init__(self, picture, place:tuple):
+        """
+        Create an image in a specific place
+
+        @param picture: (str) name of the image to show on the screen
+        @param place: (tuple) position of the image on the screen
+        """
         pygame.sprite.Sprite.__init__(self)
         self.image = get_image(picture)
         self.rect = self.image.get_rect()
@@ -257,6 +279,7 @@ def game():
     Display of the game
     """
     # executing options
+
     background = get_image(background_name)
     screen.blit(background,(0,0))
     if pic_name == "pig.png":
@@ -266,8 +289,10 @@ def game():
     else:
         animal_sound = get_sound("mee.wav")
     screen.blit(background,(0,0))
+    loser = 1
 
     # creating sprites
+
     piglet_sprite = pygame.sprite.RenderClear() 
     piglet = Piglet()
     piglet_sprite.add(piglet)
@@ -292,12 +317,13 @@ def game():
     lives_sprite.add(lives_right)
 
     game_over_sprite = pygame.sprite.RenderClear()
-    game_over = Game_over()
+    game_over = Show_picture('game_over.png', (screen_size[0]/2,screen_size[1]/2))
     game_over_sprite.add(game_over)
 
     pygame.display.flip()
 
     # running
+
     clock = pygame.time.Clock()
     run = True
 
@@ -307,10 +333,12 @@ def game():
             if event.type == pygame.QUIT:
                 run = False
                 lives_left.lives = 0
+                loser = 0
             elif event.type == KEYDOWN:
                 if event.key == K_ESCAPE:
                     run = False
                     lives_left.lives = 0
+                    loser = 0
                 elif event.key == K_w:
                     bar_left.y_velocity = -8
                 elif event.key == K_s:
@@ -398,13 +426,12 @@ def game():
         bar_sprite.clear(screen, background)
         score_sprite.clear(screen, background)
         lives_sprite.clear(screen, background)
-        game_over_sprite.clear(screen, background)
         piglet_sprite.draw(screen)
         bar_sprite.draw(screen)
         score_sprite.draw(screen)
         lives_sprite.draw(screen)
 
-
+        #game over
 
         if lives_left.lives == 0 or lives_right.lives == 0:
             found = False
@@ -435,10 +462,16 @@ def game():
                             if i+1 <= 9:
                                 list_of_scores[i+1] = [score_right.name, score_right.maxpoints]
             write_to_file(list_of_scores)
-
+            score_sprite.clear(screen, background)
+            lives_sprite.clear(screen, background)
+            if loser == 1:
+                lives_sprite.update()
+            game_over_sprite.clear(screen, background)
             game_over_sprite.draw(screen)
+            score_sprite.draw(screen)
+            lives_sprite.draw(screen)
             pygame.display.flip()
-            time.sleep(5)
+            time.sleep(3)
         
         
         pygame.display.flip()
@@ -450,7 +483,12 @@ def game():
 def set_animal(event1, event2):
     """
     Set the animal of the user's choice
+    @param event1: (tuple) the data of the selected object
+    @param event2: (int) the number of the option
+    @raise TypeError: if type of given data is incorrect
     """
+    if not (isinstance(event1,tuple) and isinstance(event2,int)):
+        raise TypeError
     global pic_name
     if event2 == 2:
         pic_name = "sheep.png"
@@ -463,7 +501,7 @@ def set_background(event1, event2):
     """
     Set the background of the user's choice
 
-    @param event1: (tuple) !!!!!!!!
+    @param event1: (tuple) the data of the selected object
     @param event2: (int) the number of the option
     @raise TypeError: if type of given data is incorrect
     """
@@ -475,16 +513,48 @@ def set_background(event1, event2):
     else:
         background_name = "oink.png"
 
+def set_difficulty(event1, event2):
+    """
+    Set the difficulty to the level of the user's choice
+
+    @param event1: (tuple) the data of the selected object
+    @param event2: (int) the number of the option
+    @raise TypeError: if type of given data is incorrect
+    """
+    if not (isinstance(event1, tuple) and isinstance(event2, int)):
+        raise TypeError
+    global bar_pic
+    if event2 == 2:
+        bar_pic = "bar2.png"
+    elif event2 == 3:
+        bar_pic = "bar1.png"
+    else:
+        bar_pic = "bar3.png"
+
 #---------------------------------------------------------------------
 #                             RULES
 #---------------------------------------------------------------------
 
 def rules():
     """
-
+    Display the rules of the game
     """
-    rules_pic = get_image("rules.png")
+    rules_pic = get_image("menu.png")
     screen.blit(rules_pic,(0,0))
+    with open("DATA/rules.txt", 'r') as text_file:
+        text_data = text_file.readlines()
+    rules_text = []
+    position = [screen_size[0]/2, screen_size[1]/8]
+    for i in text_data:
+        rules_text += [Show_text(i[:-1], tuple(position))]
+        position[1] += 40
+    
+    rules_sprite = pygame.sprite.RenderClear()
+    for i in rules_text:
+        rules_sprite.add(i)
+    rules_sprite.clear(screen, rules_pic)
+    rules_sprite.draw(screen)
+
     pygame.display.flip()
 
     clock = pygame.time.Clock()
@@ -601,28 +671,6 @@ def set_right_name(event):
     right_name = event
 
 #---------------------------------------------------------------------
-#                         SETTING DIFFICULTY
-#---------------------------------------------------------------------
-
-def set_difficulty(event1, event2):
-    """
-    Set the difficulty to the level of the user's choice
-
-    @param event1: (tuple) !!!!!!!!
-    @param event2: (int) the number of the option
-    @raise TypeError: if type of given data is incorrect
-    """
-    if not (isinstance(event1, tuple) and isinstance(event2, int)):
-        raise TypeError
-    global bar_pic
-    if event2 == 2:
-        bar_pic = "bar2.png"
-    elif event2 == 3:
-        bar_pic = "bar1.png"
-    else:
-        bar_pic = "bar3.png"
-
-#---------------------------------------------------------------------
 #                         WINDOW AND MENU
 #---------------------------------------------------------------------
 
@@ -640,13 +688,16 @@ bar_pic = "bar3.png"
 if os.path.exists('score_table.txt'):
     with open('score_table.txt', 'r') as table_file:
         score_table = table_file.read()
-        #jeszcze obsługę błędów dopisać
-    list_of_scores = eval(score_table)
+    try:
+        list_of_scores = eval(score_table)
+    except:
+        raise ValueError
 else:
     list_of_scores = [['',0] for i in range(10)]
 
 
 # creatin menu theme
+
 menu_theme = pygame_menu.Theme(background_color=(0, 0, 0, 0), title_background_color=(247, 136, 181), title_font_color = (0,0,0), title_font = pygame_menu.font.FONT_COMIC_NEUE, selection_color = (255, 0, 102, 1))
 menu_pic = pygame_menu.baseimage.BaseImage(image_path=os.path.join('DATA', "menu.png"), drawing_mode=pygame_menu.baseimage.IMAGE_MODE_REPEAT_XY)
 menu_theme.background_color = menu_pic
