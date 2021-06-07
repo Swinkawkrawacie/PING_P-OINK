@@ -1,5 +1,3 @@
-from genericpath import isdir
-from typing_extensions import runtime
 import pygame
 import pygame_menu
 from pygame.locals import *
@@ -614,7 +612,7 @@ def author():
     with open("DATA/author.txt", 'r') as text_file:
         text_data = text_file.readlines()
     author_text = []
-    position = [screen_size[0]/2, screen_size[1]/5]
+    position = [screen_size[0]/2, screen_size[1]/7]
     for i in text_data:
         author_text += [Show_text(i[:-1], tuple(position))]
         position[1] += 40
