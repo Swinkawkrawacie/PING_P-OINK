@@ -507,7 +507,9 @@ def set_background(event1, event2):
         raise TypeError
     global background_name
     if event2 == 2:
-        background_name = "pond.png"
+        background_name = "meadow.png"
+    elif event2 == 3:
+        background_name = "sea.png"
     else:
         background_name = "oink.png"
 
@@ -709,7 +711,7 @@ menu.add.text_input("Name :", default='Player 1', onchange=set_left_name)
 menu.add.text_input("Name :", default='Player 2', onchange=set_right_name)
 menu.add.selector('Difficulty :', [('Easy', 1), ('Medium', 2), ("Hard", 3)], onchange=set_difficulty)
 menu.add.selector('Animal :', [('Piglet', 1), ('Sheep', 2), ("Duck", 3)], onchange=set_animal)
-menu.add.selector('Background :', [('PING P-OINK!', 1), ('Pond', 2)], onchange=set_background)
+menu.add.selector('Background :', [('PING P-OINK!', 1), ('Meadow', 2), ("Sea", 3)], onchange=set_background)
 menu.add.button('Game rules', rules)
 menu.add.button('Best scores', scores)
 menu.add.button('About the author', author)
